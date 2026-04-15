@@ -131,28 +131,41 @@ function drawRewardChart(canvas, qRewards, sRewards) {
     clearCanvas(ctx, 800, 350);
     const L = 65, T = 40, W = 700, H = 260;
 
-    const allData = qRewards.concat(sRewards);
-    const yMin = Math.min(...allData) * 1.05;
-    const yMax = Math.max(0, Math.max(...allData) * 1.1);
+    // Clip yMin to -200 so converged region is visible
+    // Early episodes can be -1000~-3000 which crushes the scale
+    const rawMin = Math.min(...qRewards, ...sRewards);
+    const yMin = Math.max(rawMin, -200);
+    const yMax = 10;
+
+    // Clip data for drawing (values below yMin drawn at yMin)
+    const clipData = (arr) => arr.map(v => Math.max(v, yMin));
 
     drawGrid(ctx, L, T, W, H, 5, yMin, yMax);
     drawAxes(ctx, L, T, W, H, '回合數 (Episodes)', '累積獎勵', qRewards.length, yMin, yMax);
-    drawTitle(ctx, '每回合累積獎勵曲線', 400, 22);
+    drawTitle(ctx, '每回合累積獎勵曲線（Y 軸截取至 -200）', 400, 22);
 
-    // raw data as faded area
-    drawArea(ctx, qRewards, L, T, W, H, yMin, yMax, COLORS.qRaw);
-    drawArea(ctx, sRewards, L, T, W, H, yMin, yMax, COLORS.sRaw);
+    // raw data as faded area (clipped)
+    drawArea(ctx, clipData(qRewards), L, T, W, H, yMin, yMax, COLORS.qRaw);
+    drawArea(ctx, clipData(sRewards), L, T, W, H, yMin, yMax, COLORS.sRaw);
 
     // smoothed lines
     const qMA = movingAverage(qRewards, 20);
     const sMA = movingAverage(sRewards, 20);
-    drawLine(ctx, qMA, L, T, W, H, yMin, yMax, COLORS.qLine, 2);
-    drawLine(ctx, sMA, L, T, W, H, yMin, yMax, COLORS.sLine, 2);
+    drawLine(ctx, clipData(qMA), L, T, W, H, yMin, yMax, COLORS.qLine, 2.5);
+    drawLine(ctx, clipData(sMA), L, T, W, H, yMin, yMax, COLORS.sLine, 2.5);
 
     drawLegend(ctx, L + 10, T + 18, [
         { label: 'Q-learning（滑動平均）', color: COLORS.qLine },
         { label: 'SARSA（滑動平均）', color: COLORS.sLine }
     ]);
+
+    // Note about clipping
+    if (rawMin < -200) {
+        ctx.fillStyle = 'rgba(253,203,110,0.7)';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(`※ 早期極端值（最低 ${Math.round(rawMin)}）已截取以突顯收斂差異`, L + W - 5, T + H - 5);
+    }
 }
 
 function drawStabilityChart(canvas, qRewards, sRewards) {
