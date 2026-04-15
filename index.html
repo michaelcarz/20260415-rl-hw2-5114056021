@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="HW2: Q-learning vs SARSA — Cliff Walking 強化學習演算法比較">
+    <title>HW2 — Cliff Walking: Q-learning vs SARSA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <h1>Cliff Walking</h1>
+    <p class="subtitle">HW2 — Q-learning vs SARSA 強化學習演算法比較</p>
+
+    <!-- Card 1: Environment -->
+    <div class="card">
+        <div class="card-title"><span class="icon">🗺️</span> 環境：Cliff Walking (4×12)</div>
+        <div class="env-grid-wrapper">
+            <div class="env-grid" id="env-grid"></div>
+        </div>
+        <div class="legend">
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--green)"></span>起點 S</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--gold)"></span>終點 G</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--red)"></span>懸崖 Cliff</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--surface-2)"></span>安全區域</span>
+        </div>
+    </div>
+
+    <!-- Card 2: Training Controls -->
+    <div class="card">
+        <div class="card-title"><span class="icon">⚙️</span> 訓練參數設定</div>
+        <div class="controls">
+            <div class="control-group">
+                <label for="episodes">訓練回合數</label>
+                <select id="episodes">
+                    <option value="300">300</option>
+                    <option value="500" selected>500</option>
+                    <option value="1000">1000</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="alpha">學習率 α</label>
+                <select id="alpha">
+                    <option value="0.05">0.05</option>
+                    <option value="0.1" selected>0.1</option>
+                    <option value="0.2">0.2</option>
+                    <option value="0.5">0.5</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="gamma">折扣因子 γ</label>
+                <select id="gamma">
+                    <option value="0.9" selected>0.9</option>
+                    <option value="0.95">0.95</option>
+                    <option value="0.99">0.99</option>
+                    <option value="1.0">1.0</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="epsilon">探索率 ε</label>
+                <select id="epsilon">
+                    <option value="0.05">0.05</option>
+                    <option value="0.1" selected>0.1</option>
+                    <option value="0.2">0.2</option>
+                    <option value="0.3">0.3</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="numRuns">獨立實驗次數</label>
+                <select id="numRuns">
+                    <option value="10">10</option>
+                    <option value="30" selected>30</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+        </div>
+        <div style="margin-top:1rem;display:flex;gap:.75rem;flex-wrap:wrap;">
+            <button id="btn-train" class="btn-primary">🚀 開始訓練</button>
+            <button id="btn-multi" class="btn-secondary">📊 多次實驗統計</button>
+        </div>
+        <div class="progress-bar-wrapper" id="progress-wrapper" style="display:none;">
+            <div class="progress-bar" id="progress-bar"></div>
+            <span class="progress-text" id="progress-text">0%</span>
+        </div>
+    </div>
+
+    <!-- Card 3: Reward Curves -->
+    <div class="card" id="card-reward" style="display:none;">
+        <div class="card-title"><span class="icon">📈</span> 每回合累積獎勵曲線</div>
+        <div class="chart-container">
+            <canvas id="reward-chart" width="800" height="350"></canvas>
+        </div>
+        <div class="chart-container" style="margin-top:1rem;">
+            <canvas id="stability-chart" width="800" height="250"></canvas>
+        </div>
+    </div>
+
+    <!-- Card 4: Policy Paths -->
+    <div class="card" id="card-policy" style="display:none;">
+        <div class="card-title"><span class="icon">🧭</span> 最終策略路徑與 Q 值熱力圖</div>
+        <div class="policy-section">
+            <div class="policy-block">
+                <div class="policy-label">Q-learning（冒險策略）</div>
+                <div class="env-grid-wrapper"><div class="env-grid policy-grid" id="q-policy-grid"></div></div>
+            </div>
+            <div class="policy-block">
+                <div class="policy-label">SARSA（安全策略）</div>
+                <div class="env-grid-wrapper"><div class="env-grid policy-grid" id="s-policy-grid"></div></div>
+            </div>
+        </div>
+        <div class="policy-section" style="margin-top:1.5rem;">
+            <div class="policy-block">
+                <div class="policy-label">Q-learning Q 值熱力圖</div>
+                <div class="env-grid-wrapper"><div class="env-grid heatmap-grid" id="q-heatmap-grid"></div></div>
+            </div>
+            <div class="policy-block">
+                <div class="policy-label">SARSA Q 值熱力圖</div>
+                <div class="env-grid-wrapper"><div class="env-grid heatmap-grid" id="s-heatmap-grid"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 5: Multi-run Stats -->
+    <div class="card" id="card-multi" style="display:none;">
+        <div class="card-title"><span class="icon">📊</span> 多次獨立實驗統計比較</div>
+        <div class="chart-container">
+            <canvas id="multi-chart" width="800" height="350"></canvas>
+        </div>
+        <div class="stats-table-wrapper" id="stats-table-wrapper"></div>
+    </div>
+
+    <!-- Card 6: Analysis -->
+    <div class="card" id="card-analysis" style="display:none;">
+        <div class="card-title"><span class="icon">📝</span> 理論比較與結論</div>
+        <div id="analysis-content" class="analysis-content"></div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script src="engine.js"></script>
+    <script src="charts.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
