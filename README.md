@@ -99,12 +99,14 @@ Q(s,a) ← Q(s,a) + α[r + γ · Q(s',a') − Q(s,a)]
 ## 📁 檔案結構
 
 ```
-├── index.html    # 主頁面
-├── style.css     # Dark Theme 樣式
-├── engine.js     # RL 引擎（環境 + Q-learning + SARSA）
-├── charts.js     # Canvas 圖表繪製（中文標籤）
-├── app.js        # 主控制邏輯
-└── README.md     # 本文件
+├── index.html          # 主頁面
+├── style.css           # Dark Theme 樣式
+├── engine.js           # RL 引擎（環境 + Q-learning + SARSA）
+├── charts.js           # Canvas 圖表繪製（中文標籤）
+├── app.js              # 主控制邏輯
+├── openspec-design.md  # OpenSpec 設計文件
+├── openspec-tasks.md   # OpenSpec 任務清單
+└── README.md           # 本文件
 ```
 
 ## 🚀 本地執行
